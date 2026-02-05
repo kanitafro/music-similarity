@@ -144,6 +144,9 @@ Top 10 similar tracks to *queries/humming2.wav*:
 ```
 <img width="712" height="297" alt="Image" src="https://github.com/user-attachments/assets/4aab5256-bddd-4a56-a470-27cac3183524" />
 
+## Future Work
+
+Future work will expand this system beyond music similarity to also classify genres. Using the same audio features, we can train a simple model on the GTZAN dataset to predict which of its ten genres a track belongs to. This model would output a probability for each genre, allowing it to make single predictions and also show how certain it is. The current layered feature design is flexible and can be adapted to other datasets. By keeping the feature extraction separate from the dataset labels, the same system could support both similarity search and genre classification at the same time. This would make it a reusable tool for analyzing music, where perceptual, spectral, and rhythmic features provide understandable inputs for multiple tasks across different collections of audio.
 
 ## References
 
