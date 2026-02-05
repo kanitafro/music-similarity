@@ -12,6 +12,10 @@ exploratory interaction, Uniform Manifold Approximation and Projection (UMAP) is
 relationships in the data. Finally, a Query by Humming (QbH) component based on mel-spectral embeddings enables melody-driven retrieval that is robust to performance variability. The
 proposed architecture emphasizes interpretability, perceptual relevance, and modularity, providing a scalable foundation for music similarity exploration in academic and educational settings.
 
+
+📽️ VIDEO PRESENTATION
+
+
 ## Instructions
 
 1. Follow the link to the GTZAN dataset and the instructions for data preparation located in *data/README.md*.
@@ -27,7 +31,9 @@ proposed architecture emphasizes interpretability, perceptual relevance, and mod
    ```
    define the number of checkpoints (chunks) during feature extraction (set to 10 since there are 10 genres*100 samples per genre) and the 0-indexed starting chunk (START_CHUNK will not be set to 0 only if feature extraction was forcefully terminated).
 3. Run all cells in `results.ipynb`. This will produce ***qbh_mel_features.csv*** and will display detailed results.
-4. Run
+   * You can add any humming file (must be in wav format) to ***queries/*** and make sure you change the query path in the code from  ```query_path = "queries/humming2.wav"```  to your filename.
+   * The `query_path` variable is defined in the 3rd cell in the notebook. Don't move it up.
+5. Run
    
    ```
    streamlit run app.py
@@ -50,11 +56,45 @@ While A-weighting in layer 1 models how the human ear perceives relative loudnes
 
 Spectral and timbre features describe a sound’s acoustic energy across different frequencies. They serve as a useful approximation for timbre—the perceptual quality that differentiates sounds with the same pitch and loudness. In this experiment, **timbre** features include RMS energy and MFCCs, described by their mean and variance. They capture a sound's overall energy, spectral shape, and articulation. **Spectral** features consist of spectral centroid, bandwidth, and rolloff, also represented by their mean and variance. These quantify a sound’s brightness, its spread across frequencies, and the distribution of high-frequency energy. Collectively, these descriptors capture characteristics such as instrumentation, production style, and timbral texture, which are valuable for tasks like genre classification and audio similarity. Previous MIR research shows these features represent information that is separate from a song’s harmony, providing a useful complement to pitch-based data.
 
+```
+    timbre_features = (
+        ['rms_mean', 'rms_var'] +
+        [c for c in all_cols if c.startswith('mfcc')]  # all MFCC columns
+    )
+
+    spectral_features = [
+        'spectral_centroid_mean', 'spectral_centroid_var',
+        'spectral_bandwidth_mean', 'spectral_bandwidth_var',
+        'rolloff_mean', 'rolloff_var'
+    ]
+```
+
 **Chroma (harmony)** features represent the distribution of spectral energy across the twelve pitch classes while collapsing information across octaves. In this experiment, the chroma feature group contains statistics derived from a short-time Fourier transform (STFT mean and variance) as well as mean and variance descriptors derived from harmonic–percussive source separation. These features focus on tonal and harmonic information while remaining resistant to variations in timbre and pitch register. This makes them particularly effective for tasks like key detection and melodic similarity. Enhanced harmonic representations focusing on stable spectral peaks have been shown to improve robustness in polyphonic and real-world recordings.
+
+```
+    chroma_harmony_features = [
+        'chroma_stft_mean', 'chroma_stft_var',
+        'harmony_mean', 'harmony_var',
+        'percussive_mean', 'percussive_var'
+    ]
+```
 
 **Tempo (rhythm)** features describe how musical events are organized in time by capturing patterns in pulse and meter. This group includes a global tempo estimate and statistics for zero-crossing rate (mean and variance). These features describe higher-level temporal patterns that simpler spectral or harmonic descriptors cannot directly access. They have been shown to form an independent dimension of musical description in MIR systems. As a result, rhythm-based representations are particularly informative for distinguishing musical styles and explaining similarities driven by temporal structure.
 
+```
+    rhythm_tempo_features = [
+        'tempo',
+        'zero_crossing_rate_mean',
+        'zero_crossing_rate_var'
+    ]
+```
+
 This new layer organizes audio features into intuitive groups like timbre, harmony, and rhythm, rather than using individual technical metrics. This makes it possible to explain similarity (e.g. saying that two songs sound alike because of their shared harmony). These groups reflect well-established musical qualities and provide a clearer, more interpretable foundation for comparing music. The next layer will use these grouped features to calculate similarity, allowing control over how much each musical aspect influences the final result.
+
+```
+    a_weighted_features = [c for c in all_cols if c.startswith('a_weighted_mel')]
+```
+
 
 
 ### Layer 3 - UMAP-Based Similarity Embeddings
@@ -64,17 +104,42 @@ Computing one UMAP per feature group preserves the interpretability established 
 
  * **Timbre UMAP**: Encodes instrument textures and sonic color, primarily derived from MFCCs and RMS features. Clusters in this space reveal similarities in timbral characteristics across tracks.
  * **Spectral UMAP**: Captures brightness and frequency distribution patterns using spectral centroid, bandwidth, and rolloff. Tracks close in this embedding share similar spectral envelopes.
+   
+<img width="490" height="290" alt="Image" src="https://github.com/user-attachments/assets/9e60a13d-24bf-4f5f-81dc-598b81d30748" /> <img width="490" height="290" alt="Image" src="https://github.com/user-attachments/assets/498c142b-43f0-4509-84fd-192eef9075c3" />
+
  * **Rhythm/Tempo UMAP**: Represents rhythmic energy and tempo similarity, informed by zero-crossing rates and beat-tracking. This allows the visualization of tempo- and rhythm-related clusters.
  * **Chroma/Harmony UMAP**: Emphasizes tonal and harmonic relationships, organizing tracks according to chord structures and pitch content.
+
+<img width="490" height="290" alt="Image" src="https://github.com/user-attachments/assets/cbd4fd1e-3d99-44ab-88ec-4fe8c9c6b1ea" /> <img width="490" height="290" alt="Image" src="https://github.com/user-attachments/assets/be984a1c-4c4a-454b-b78e-8042b9515f88" />
+
  * **A-weighted Mel UMAP**: Integrates perceptually weighted loudness and energy features, reflecting the human auditory response in the clustering structure.
 
+<img width="490" height="290" alt="Image" src="https://github.com/user-attachments/assets/ba2c59dd-8dc3-4e22-9648-a51dae605a05" />
+
 Each embedding provides a musically interpretable 2D space where proximity corresponds to similarity within that feature group. Comparing embeddings across groups enables multi-dimensional exploration: a track may cluster by timbre in one embedding while aligning differently in rhythm or harmony space, revealing nuanced relationships. This approach preserves explainability and interpretability from layers 1 and 2, supporting both analytical insight and interactive exploration of complex music collections.
+
 
 
 ### Layer 4 - Query by Humming
 **Query by Humming (QbH)** is a MIR task in which users retrieve musical works by vocally imitating a melody rather than using textual metadata. Hummed queries differ significantly from studio recordings in timbre, pitch stability, tempo, and recording conditions. These differences require audio representations that emphasize perceptually relevant musical content while remaining robust to noise and performance variability. Early QbH systems relied on symbolic representations such as pitch contours or note sequences, but these approaches are sensitive to pitch extraction errors and temporal misalignment. To address these limitations, recent systems adopt embedding-based retrieval, where both queries and reference tracks are represented as fixed-length vectors and compared using standard distance metrics.
 
 In this project, QbH is implemented using mel-spectral embeddings with statistical pooling. Each audio signal is converted to a monophonic waveform and transformed into a mel spectrogram using a perceptually motivated frequency scale. Spectrograms are converted to a logarithmic amplitude representation and then center-cropped or zero-padded to a fixed number of time frames to ensure comparability across inputs. Per-frequency-band z-score normalization is applied to reduce loudness bias and inter-recording variability. Temporal information is summarized by computing the mean and standard deviation of each mel band over time, producing a fixed-length embedding. Both reference tracks and hummed queries are processed using the same pipeline. Retrieval is performed by computing cosine distances between embeddings, yielding a temporally invariant and noise-robust baseline QbH system.
+
+Top 10 similar tracks to *queries/humming2.wav*:
+```
+        track_id   genre  similarity
+764     pop00064     pop    0.983434
+732     pop00032     pop    0.983204
+437  hiphop00037  hiphop    0.983119
+755     pop00055     pop    0.982884
+888  reggae00088  reggae    0.981342
+797     pop00097     pop    0.981117
+748     pop00048     pop    0.980685
+872  reggae00072  reggae    0.980614
+777     pop00077     pop    0.980483
+887  reggae00087  reggae    0.980379
+```
+<img width="712" height="297" alt="Image" src="https://github.com/user-attachments/assets/4aab5256-bddd-4a56-a470-27cac3183524" />
 
 
 ## References
