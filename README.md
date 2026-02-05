@@ -15,6 +15,9 @@ proposed architecture emphasizes interpretability, perceptual relevance, and mod
 
 📽️ [VIDEO PRESENTATION](https://youtu.be/RwvadVpLAsE?si=_S13-lRM2IquWtP0)
 
+<img width="1890" height="897" alt="Image" src="https://github.com/user-attachments/assets/cbd128d3-8394-46d4-8561-b1f9c6aaa14c" />
+
+**Image 1.** *User Interface*
 
 ## Instructions
 
