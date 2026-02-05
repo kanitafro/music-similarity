@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
-from process_spectrograms import extract_qbh_query
+from utils.process_spectrograms import extract_qbh_query
 from utils.feature_groups import get_feature_groups
 
 def normalize_group_distances(group_dists):
@@ -220,3 +220,4 @@ def find_similar_qbh(
         .sort_values("similarity", ascending=False)
         .head(top_n)
     )
+
