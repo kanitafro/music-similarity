@@ -12,6 +12,28 @@ exploratory interaction, Uniform Manifold Approximation and Projection (UMAP) is
 relationships in the data. Finally, a Query by Humming (QbH) component based on mel-spectral embeddings enables melody-driven retrieval that is robust to performance variability. The
 proposed architecture emphasizes interpretability, perceptual relevance, and modularity, providing a scalable foundation for music similarity exploration in academic and educational settings.
 
+## Instructions
+
+1. Follow the link to the GTZAN dataset and the instructions for data preparation located in *data/README.md*.
+2. Run
+   
+   ```
+   python feature_extraction.py
+   ```
+   This will take around 30 minutes and it will output the ***features_full_combined.csv*** alongside the ***features_chunks/*** folder thats serves as checkpoints to feature extraction. In `feature_extraction.py` the constants
+   ```
+   N_CHUNKS = 10           # number of parts to divide files into
+   START_CHUNK = 0         # which chunk to start from (0-indexed)
+   ```
+   define the number of checkpoints (chunks) during feature extraction (set to 10 since there are 10 genres*100 samples per genre) and the 0-indexed starting chunk (START_CHUNK will not be set to 0 only if feature extraction was forcefully terminated).
+3. Run all cells in `results.ipynb`. This will produce ***qbh_mel_features.csv*** and will display detailed results.
+4. Run
+   
+   ```
+   streamlit run app.py
+   ```
+   which will open a new tab in your browser and start the streamlit application.
+
 ## Original Features (Layers)
 
 ### Layer 1 - A-Weighted Pschoacoustic Features
@@ -21,8 +43,6 @@ A-weighting is a frequency-dependent weighting function derived from the equal-l
 In this experiment, A-weighting is applied at the feature level rather than to raw audio or Mel spectrograms. The input consists of pre-extracted Mel-band energy features stored in CSV format, where each Mel band represents a perceptually motivated frequency range. The center frequency of each band is used to evaluate the A-weighting curve, and the resulting weighting factors are applied directly to the corresponding Mel-band energies. Frequencies to which human hearing is less sensitive are attenuated, while perceptually salient mid-frequency bands are preserved, producing A-weighted feature vectors for downstream similarity computation.
 
 This feature-level approach provides a lightweight and interpretable perceptual approximation without performing signal-level processing or modeling nonlinear auditory effects such as masking. By biasing similarity measures toward perceptually relevant spectral regions, the method improves alignment with human judgments of timbre while maintaining computational efficiency and compatibility with CSV-based MIR workflows.
-
-
 
 
 ### Layer 2 - Explainable Feature Groups
@@ -55,7 +75,6 @@ Each embedding provides a musically interpretable 2D space where proximity corre
 **Query by Humming (QbH)** is a MIR task in which users retrieve musical works by vocally imitating a melody rather than using textual metadata. Hummed queries differ significantly from studio recordings in timbre, pitch stability, tempo, and recording conditions. These differences require audio representations that emphasize perceptually relevant musical content while remaining robust to noise and performance variability. Early QbH systems relied on symbolic representations such as pitch contours or note sequences, but these approaches are sensitive to pitch extraction errors and temporal misalignment. To address these limitations, recent systems adopt embedding-based retrieval, where both queries and reference tracks are represented as fixed-length vectors and compared using standard distance metrics.
 
 In this project, QbH is implemented using mel-spectral embeddings with statistical pooling. Each audio signal is converted to a monophonic waveform and transformed into a mel spectrogram using a perceptually motivated frequency scale. Spectrograms are converted to a logarithmic amplitude representation and then center-cropped or zero-padded to a fixed number of time frames to ensure comparability across inputs. Per-frequency-band z-score normalization is applied to reduce loudness bias and inter-recording variability. Temporal information is summarized by computing the mean and standard deviation of each mel band over time, producing a fixed-length embedding. Both reference tracks and hummed queries are processed using the same pipeline. Retrieval is performed by computing cosine distances between embeddings, yielding a temporally invariant and noise-robust baseline QbH system.
-
 
 
 ## References
