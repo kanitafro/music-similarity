@@ -1,0 +1,12 @@
+pandas
+numpy
+umap-learn
+librosa
+scipy
+tqdm
+soundfile
+streamlit
+plotly
+matplotlib
+seaborn
+scikit-learn
